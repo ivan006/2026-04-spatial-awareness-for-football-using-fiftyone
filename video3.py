@@ -58,7 +58,7 @@ while True:
         image_id = images[frame_idx]["id"]
 
         for contour in contour_cache.get(image_id, []):
-            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 1)
 
     cv2.imshow("Video (Mask Outlines)", frame)
 
