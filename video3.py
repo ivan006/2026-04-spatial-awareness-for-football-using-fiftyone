@@ -22,21 +22,26 @@ video_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 video_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
 
-# 🔥 CACHE MASKS (huge speed boost)
-mask_cache = {}
+# 🔥 CACHE CONTOURS (faster than masks every frame)
+contour_cache = {}
 
 for img in images:
     image_id = img["id"]
-    masks = []
+    contours_list = []
 
     for a in anns.get(image_id, []):
         seg = a.get("segmentation")
         if isinstance(seg, dict):
             mask = mask_utils.decode(seg)
             mask = cv2.resize(mask.astype(np.uint8), (video_w, video_h))
-            masks.append(mask)
 
-    mask_cache[image_id] = masks
+            contours, _ = cv2.findContours(
+                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+
+            contours_list.extend(contours)
+
+    contour_cache[image_id] = contours_list
 
 frame_idx = 0
 
@@ -52,16 +57,10 @@ while True:
     if frame_idx < len(images):
         image_id = images[frame_idx]["id"]
 
-        overlay = frame.copy()
+        for contour in contour_cache.get(image_id, []):
+            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
 
-        for mask in mask_cache.get(image_id, []):
-            color = np.zeros_like(frame, dtype=np.uint8)
-            color[:, :] = (0, 255, 0)
-            overlay[mask == 1] = color[mask == 1]
-
-        frame = cv2.addWeighted(overlay, 0.4, frame, 0.6, 0)
-
-    cv2.imshow("Video (Mask Overlay)", frame)
+    cv2.imshow("Video (Mask Outlines)", frame)
 
     if cv2.waitKey(int(1000 / fps)) & 0xFF == 27:
         break
