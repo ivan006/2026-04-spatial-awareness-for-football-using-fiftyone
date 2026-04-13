@@ -12,25 +12,15 @@ anns = {}
 for a in coco["annotations"]:
     anns.setdefault(a["image_id"], []).append(a)
 
-# sort images to match frame order
 images = sorted(coco["images"], key=lambda x: x["file_name"])
 
 cap = cv2.VideoCapture(video_path)
 
-# get video properties
 video_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 video_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
 
-print("Video:", video_w, "x", video_h, "| FPS:", fps)
-
-# Roboflow image size (square)
-img_w = 640
-img_h = 640
-
-# correct scaling (stretched square → video)
-scale_x = video_w / img_w
-scale_y = video_h / img_h
+print("Video:", video_w, "x", video_h)
 
 frame_idx = 0
 
@@ -40,12 +30,19 @@ while True:
         break
 
     if frame_idx < len(images):
-        image_id = images[frame_idx]["id"]
+        img_info = images[frame_idx]
+        image_id = img_info["id"]
+
+        # 🔥 USE REAL IMAGE SIZE FROM COCO
+        img_w = img_info["width"]
+        img_h = img_info["height"]
+
+        scale_x = video_w / img_w
+        scale_y = video_h / img_h
 
         for a in anns.get(image_id, []):
             x, y, w, h = a["bbox"]
 
-            # scale boxes to video space
             x = int(x * scale_x)
             y = int(y * scale_y)
             w = int(w * scale_x)
@@ -55,7 +52,6 @@ while True:
 
     cv2.imshow("Video", frame)
 
-    # use real FPS for smooth playback
     if cv2.waitKey(int(1000 / fps)) & 0xFF == 27:
         break
 
