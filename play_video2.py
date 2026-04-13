@@ -17,15 +17,18 @@ images = sorted(coco["images"], key=lambda x: x["file_name"])
 
 cap = cv2.VideoCapture(video_path)
 
-# get video size
+# get video properties
 video_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 video_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps = cap.get(cv2.CAP_PROP_FPS)
+
+print("Video:", video_w, "x", video_h, "| FPS:", fps)
 
 # Roboflow image size (square)
 img_w = 640
 img_h = 640
 
-# non-uniform scaling (fixes "skinny" issue)
+# correct scaling (stretched square → video)
 scale_x = video_w / img_w
 scale_y = video_h / img_h
 
@@ -42,7 +45,7 @@ while True:
         for a in anns.get(image_id, []):
             x, y, w, h = a["bbox"]
 
-            # apply separate scaling for x and y
+            # scale boxes to video space
             x = int(x * scale_x)
             y = int(y * scale_y)
             w = int(w * scale_x)
@@ -52,7 +55,8 @@ while True:
 
     cv2.imshow("Video", frame)
 
-    if cv2.waitKey(30) & 0xFF == 27:
+    # use real FPS for smooth playback
+    if cv2.waitKey(int(1000 / fps)) & 0xFF == 27:
         break
 
     frame_idx += 1
