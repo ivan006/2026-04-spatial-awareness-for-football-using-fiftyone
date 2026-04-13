@@ -1,7 +1,7 @@
 import cv2
 import json
 
-video_path = "dataset/petal_20260413_065046.mp4"  # your original video
+video_path = "dataset/petal_20260413_065046.mp4"
 coco_path = "dataset/test/train/_annotations.coco.json"
 
 with open(coco_path) as f:
@@ -17,6 +17,22 @@ images = sorted(coco["images"], key=lambda x: x["file_name"])
 
 cap = cv2.VideoCapture(video_path)
 
+# get video size
+video_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+video_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+# assume Roboflow square size (adjust if needed)
+img_size = 640
+
+# compute scale (letterbox-aware)
+scale = min(video_w / img_size, video_h / img_size)
+
+new_w = int(img_size * scale)
+new_h = int(img_size * scale)
+
+pad_x = (video_w - new_w) // 2
+pad_y = (video_h - new_h) // 2
+
 frame_idx = 0
 
 while True:
@@ -28,8 +44,15 @@ while True:
         image_id = images[frame_idx]["id"]
 
         for a in anns.get(image_id, []):
-            x, y, w, h = map(int, a["bbox"])
-            cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
+            x, y, w, h = a["bbox"]
+
+            # scale + offset (fix alignment)
+            x = int(x * scale + pad_x)
+            y = int(y * scale + pad_y)
+            w = int(w * scale)
+            h = int(h * scale)
+
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     cv2.imshow("Video", frame)
 
