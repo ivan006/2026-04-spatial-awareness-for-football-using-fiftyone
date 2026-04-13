@@ -68,6 +68,7 @@ priority==2.0.0
 psutil==7.2.2
 py7zr==1.1.0
 pybcj==1.0.7
+pycocotools==2.0.11
 pycparser==3.0
 pycryptodomex==3.23.0
 pydash==8.0.6
