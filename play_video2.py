@@ -21,17 +21,13 @@ cap = cv2.VideoCapture(video_path)
 video_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 video_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-# assume Roboflow square size (adjust if needed)
-img_size = 640
+# Roboflow image size (square)
+img_w = 640
+img_h = 640
 
-# compute scale (letterbox-aware)
-scale = min(video_w / img_size, video_h / img_size)
-
-new_w = int(img_size * scale)
-new_h = int(img_size * scale)
-
-pad_x = (video_w - new_w) // 2
-pad_y = (video_h - new_h) // 2
+# non-uniform scaling (fixes "skinny" issue)
+scale_x = video_w / img_w
+scale_y = video_h / img_h
 
 frame_idx = 0
 
@@ -46,11 +42,11 @@ while True:
         for a in anns.get(image_id, []):
             x, y, w, h = a["bbox"]
 
-            # scale + offset (fix alignment)
-            x = int(x * scale + pad_x)
-            y = int(y * scale + pad_y)
-            w = int(w * scale)
-            h = int(h * scale)
+            # apply separate scaling for x and y
+            x = int(x * scale_x)
+            y = int(y * scale_y)
+            w = int(w * scale_x)
+            h = int(h * scale_y)
 
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
